@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var PROTEIN_LABELS = { beef: "Beef", chicken: "Chicken", turkey: "Turkey", pork: "Pork", mixed: "Mixed", sweet: "Sweet" };
+  var PROTEIN_LABELS = { beef: "Beef", chicken: "Chicken", turkey: "Turkey", pork: "Pork", mixed: "Mixed", sweet: "Sweet", fish: "Fish", vegetarian: "Vegetarian", vegan: "Vegan" };
   var MEAL_LABELS = { entree: "Main", breakfast: "Breakfast", snack: "Snack", dessert: "Dessert" };
 
   var MACRO_FIELDS = [
