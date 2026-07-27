@@ -85,6 +85,7 @@ img { max-width: 100%; display: block; }
 .site-header {
   border-bottom: 1px solid var(--line);
   background: var(--bg-alt);
+  position: sticky; top: 0; z-index: 30;
 }
 .site-header .wrap {
   display: flex; align-items: center; justify-content: space-between;
