@@ -10054,5 +10054,50 @@
   ],
   "macroNote": null,
   "image": "bacon-and-tomato-omelette-gluten-free-low-carb.png"
+ },
+ {
+  "id": "cajun-shrimp-sourdough-melt",
+  "title": "Cajun Shrimp Sourdough Melt",
+  "book": "Instagram",
+  "protein": "fish",
+  "meal": "entree",
+  "calories": 530,
+  "proteinG": 58,
+  "carbsG": 62,
+  "fatG": 8,
+  "yieldText": "1 serving",
+  "prep": null,
+  "cook": "5-10 min",
+  "ingredients": [
+   "4oz shrimp",
+   "2 slices sourdough",
+   "28g fat free cheese",
+   "14g 4 cheese blend, low fat",
+   "1 tsp garlic, minced",
+   "1 tbsp chopped parsley",
+   "1 tbsp Cajun seasoning",
+   "1 tsp onion powder",
+   "2 tsp smoked paprika",
+   "Salt",
+   "1/4 cup whipped cottage cheese, low fat",
+   "2 tsp garlic, minced",
+   "1 bunch parsley (save a little for the shrimp and garnish)",
+   "Salt",
+   "1/4 onion",
+   "2 tbsp tomato paste",
+   "3.25oz low fat evaporated milk",
+   "2 tbsp Cajun seasoning",
+   "2 tsp paprika",
+   "1/2 tbsp crushed red pepper",
+   "Salt"
+  ],
+  "instructions": [
+   "Season the shrimp and sear one side \u2014 don't fully cook it, since you'll air fry it again at the end.",
+   "Make the whipped cottage cheese garlic spread by mixing all the ingredients together.",
+   "For the Cajun sauce: saut\u00e9 the onion until fragrant with a little color, then add the tomato paste and let it turn a deeper red. Add the spices and evaporated milk, and bring to a simmer until it thickens \u2014 add a splash of water if needed to keep the sauce consistency.",
+   "Assemble everything on the sourdough and air fry at 350\u00b0F for 5-10 minutes, or until the cheese is melted and the toast is crisped. You can pre-toast the bread a little first to help it get crunchier."
+  ],
+  "macroNote": null,
+  "image": "placeholder.jpg"
  }
 ]
