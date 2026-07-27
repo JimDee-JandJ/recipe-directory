@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Submit a Recipe · Recipe Directory</title>
+<meta name="description" content="Found a recipe on Instagram or the web? Submit it here to get it added to the directory.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍽️</text></svg>">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">🍽️</span>
+      Recipe Directory
+    </a>
+    <nav class="site-nav-links">
+      <a href="index.html">All Recipes</a>
+      <a href="submit.html" class="active">Submit a Recipe</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <h1>Submit a Recipe</h1>
+    <p>Found something worth adding from Instagram, TikTok, or a website? Fill this in — it puts together an email with everything needed so it can get added to the directory with photo, macros, and full instructions.</p>
+  </div>
+
+  <div class="wrap" style="padding-bottom: 60px;">
+    <div class="submit-card">
+      <form id="submitForm">
+        <div class="form-row">
+          <label for="recipeName">Recipe name</label>
+          <input id="recipeName" type="text" placeholder="e.g. High Protein Birria Tacos" required>
+        </div>
+        <div class="form-row">
+          <label for="recipeLink">Link to the recipe (Instagram, TikTok, website…)</label>
+          <input id="recipeLink" type="url" placeholder="https://www.instagram.com/reel/…">
+          <div class="hint">Paste the post/reel URL, or leave blank if you're describing it from scratch below.</div>
+        </div>
+        <div class="form-row">
+          <label for="proteinType">Main protein</label>
+          <select id="proteinType">
+            <option value="Beef">Beef</option>
+            <option value="Chicken">Chicken</option>
+            <option value="Turkey">Turkey</option>
+            <option value="Seafood">Seafood</option>
+            <option value="Mixed">Mixed</option>
+            <option value="Sweet / Dessert">Sweet / Dessert</option>
+            <option value="Not sure">Not sure</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="mealType">Meal type</label>
+          <select id="mealType">
+            <option value="Entree">Entree</option>
+            <option value="Breakfast">Breakfast</option>
+            <option value="Snack">Snack</option>
+            <option value="Dessert">Dessert</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="notes">Notes, macros, or the recipe text itself</label>
+          <textarea id="notes" placeholder="Paste any caption text, ingredients, macros you already have, or just notes on why you like it."></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn">Send submission</button>
+          <span class="hint" id="submitHint">Opens your email app with everything pre-filled — just hit send.</span>
+        </div>
+      </form>
+
+      <div class="alt-methods">
+        <h3>Other ways to add a recipe</h3>
+        <ol>
+          <li>Forward or paste this same info directly into a Claude Code chat on this project and ask it to add the recipe — it'll pull the photo, macros, and steps in and rebuild the directory.</li>
+          <li>Screenshot the recipe card (Instagram/TikTok posts often show macros right on the image) and attach it in chat — that's usually enough to extract everything automatically.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    Recipes sourced from Frozen Food Aisle Favorites, Set It &amp; Shred It Vol. 1, Shred Donuts, and Meal Prepped by Tasty Shreds.
+  </div>
+</footer>
+
+<div class="toast" id="toast">Opening your email app…</div>
+
+<script>
+document.getElementById("submitForm").addEventListener("submit", function (e) {
+  e.preventDefault();
+  var name = document.getElementById("recipeName").value.trim();
+  var link = document.getElementById("recipeLink").value.trim();
+  var protein = document.getElementById("proteinType").value;
+  var meal = document.getElementById("mealType").value;
+  var notes = document.getElementById("notes").value.trim();
+
+  var subject = "New recipe for the directory: " + name;
+  var bodyLines = [
+    "Recipe name: " + name,
+    "Main protein: " + protein,
+    "Meal type: " + meal,
+    "Link: " + (link || "(none provided)"),
+    "",
+    "Notes / recipe text:",
+    notes || "(none provided)",
+  ];
+  var mailto = "mailto:jim.demeza@jamesjames.design" +
+    "?subject=" + encodeURIComponent(subject) +
+    "&body=" + encodeURIComponent(bodyLines.join("\n"));
+
+  var toast = document.getElementById("toast");
+  toast.classList.add("show");
+  setTimeout(function () { toast.classList.remove("show"); }, 3500);
+
+  window.location.href = mailto;
+});
+</script>
+</body>
+</html>
