@@ -15,6 +15,9 @@
   --tag-pork-bg: #f5e0e6; --tag-pork-fg: #92355a;
   --tag-mixed-bg: #e4dcf3; --tag-mixed-fg: #4d3a8a;
   --tag-sweet-bg: #fadde7; --tag-sweet-fg: #9c2b62;
+  --tag-fish-bg: #d8e8f5; --tag-fish-fg: #205a85;
+  --tag-vegetarian-bg: #e2edd2; --tag-vegetarian-fg: #4c6b23;
+  --tag-vegan-bg: #d3ede0; --tag-vegan-fg: #1f7a54;
 
   --meal-entree-bg: #dfeee4; --meal-entree-fg: #276b46;
   --meal-breakfast-bg: #fdeccb; --meal-breakfast-fg: #93600a;
@@ -39,6 +42,9 @@
     --tag-pork-bg: #4a2530; --tag-pork-fg: #f0b8cc;
     --tag-mixed-bg: #322a4c; --tag-mixed-fg: #cabdf2;
     --tag-sweet-bg: #4a2233; --tag-sweet-fg: #f3aecb;
+    --tag-fish-bg: #1c3a52; --tag-fish-fg: #9cc7ea;
+    --tag-vegetarian-bg: #33401c; --tag-vegetarian-fg: #c8dc9a;
+    --tag-vegan-bg: #1a3d2e; --tag-vegan-fg: #8fdcb8;
 
     --meal-entree-bg: #1e3626; --meal-entree-fg: #9fdcb8;
     --meal-breakfast-bg: #3d2e10; --meal-breakfast-fg: #f3cd83;
@@ -56,6 +62,9 @@
   --tag-pork-bg: #4a2530; --tag-pork-fg: #f0b8cc;
   --tag-mixed-bg: #322a4c; --tag-mixed-fg: #cabdf2;
   --tag-sweet-bg: #4a2233; --tag-sweet-fg: #f3aecb;
+  --tag-fish-bg: #1c3a52; --tag-fish-fg: #9cc7ea;
+  --tag-vegetarian-bg: #33401c; --tag-vegetarian-fg: #c8dc9a;
+  --tag-vegan-bg: #1a3d2e; --tag-vegan-fg: #8fdcb8;
   --meal-entree-bg: #1e3626; --meal-entree-fg: #9fdcb8;
   --meal-breakfast-bg: #3d2e10; --meal-breakfast-fg: #f3cd83;
   --meal-snack-bg: #17324a; --meal-snack-fg: #9bcdf0;
@@ -193,6 +202,9 @@ img { max-width: 100%; display: block; }
 .tag-pork { background: var(--tag-pork-bg); color: var(--tag-pork-fg); }
 .tag-mixed { background: var(--tag-mixed-bg); color: var(--tag-mixed-fg); }
 .tag-sweet { background: var(--tag-sweet-bg); color: var(--tag-sweet-fg); }
+.tag-fish { background: var(--tag-fish-bg); color: var(--tag-fish-fg); }
+.tag-vegetarian { background: var(--tag-vegetarian-bg); color: var(--tag-vegetarian-fg); }
+.tag-vegan { background: var(--tag-vegan-bg); color: var(--tag-vegan-fg); }
 .tag-meal-entree { background: var(--meal-entree-bg); color: var(--meal-entree-fg); }
 .tag-meal-breakfast { background: var(--meal-breakfast-bg); color: var(--meal-breakfast-fg); }
 .tag-meal-snack { background: var(--meal-snack-bg); color: var(--meal-snack-fg); }
