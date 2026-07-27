@@ -12,6 +12,7 @@
   --tag-beef-bg: #f6dfda; --tag-beef-fg: #8a2f1f;
   --tag-chicken-bg: #fbeecb; --tag-chicken-fg: #8a5a10;
   --tag-turkey-bg: #ecdfc9; --tag-turkey-fg: #6d4c22;
+  --tag-pork-bg: #f5e0e6; --tag-pork-fg: #92355a;
   --tag-mixed-bg: #e4dcf3; --tag-mixed-fg: #4d3a8a;
   --tag-sweet-bg: #fadde7; --tag-sweet-fg: #9c2b62;
 
@@ -35,6 +36,7 @@
     --tag-beef-bg: #4a231c; --tag-beef-fg: #f3b7a4;
     --tag-chicken-bg: #4a3915; --tag-chicken-fg: #f3d195;
     --tag-turkey-bg: #3f331b; --tag-turkey-fg: #ddc48f;
+    --tag-pork-bg: #4a2530; --tag-pork-fg: #f0b8cc;
     --tag-mixed-bg: #322a4c; --tag-mixed-fg: #cabdf2;
     --tag-sweet-bg: #4a2233; --tag-sweet-fg: #f3aecb;
 
@@ -51,6 +53,7 @@
   --tag-beef-bg: #4a231c; --tag-beef-fg: #f3b7a4;
   --tag-chicken-bg: #4a3915; --tag-chicken-fg: #f3d195;
   --tag-turkey-bg: #3f331b; --tag-turkey-fg: #ddc48f;
+  --tag-pork-bg: #4a2530; --tag-pork-fg: #f0b8cc;
   --tag-mixed-bg: #322a4c; --tag-mixed-fg: #cabdf2;
   --tag-sweet-bg: #4a2233; --tag-sweet-fg: #f3aecb;
   --meal-entree-bg: #1e3626; --meal-entree-fg: #9fdcb8;
@@ -146,6 +149,25 @@ img { max-width: 100%; display: block; }
 
 .result-count { color: var(--ink-soft); font-size: 0.88rem; padding: 4px 0 18px; }
 
+.macro-filters { padding-bottom: 4px; }
+.macro-filters .fg-label { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.link-btn {
+  border: none; background: none; padding: 0; margin: 0; cursor: pointer;
+  color: var(--accent); font-weight: 700; font-size: 0.72rem; text-transform: none; letter-spacing: normal;
+}
+.link-btn:hover { text-decoration: underline; }
+.macro-filter-row { display: flex; flex-wrap: wrap; gap: 14px 22px; padding-bottom: 16px; }
+.macro-filter { display: flex; flex-direction: column; gap: 6px; }
+.macro-filter-label { font-size: 0.78rem; font-weight: 700; color: var(--ink-soft); }
+.macro-filter-inputs { display: flex; align-items: center; gap: 6px; color: var(--ink-soft); }
+.macro-filter-inputs input {
+  width: 68px; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--bg-alt); color: var(--ink); font-size: 0.88rem;
+}
+.macro-filter-inputs input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.macro-filter-inputs input::-webkit-outer-spin-button,
+.macro-filter-inputs input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
 /* ---------- Grid ---------- */
 .grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -168,6 +190,7 @@ img { max-width: 100%; display: block; }
 .tag-beef { background: var(--tag-beef-bg); color: var(--tag-beef-fg); }
 .tag-chicken { background: var(--tag-chicken-bg); color: var(--tag-chicken-fg); }
 .tag-turkey { background: var(--tag-turkey-bg); color: var(--tag-turkey-fg); }
+.tag-pork { background: var(--tag-pork-bg); color: var(--tag-pork-fg); }
 .tag-mixed { background: var(--tag-mixed-bg); color: var(--tag-mixed-fg); }
 .tag-sweet { background: var(--tag-sweet-bg); color: var(--tag-sweet-fg); }
 .tag-meal-entree { background: var(--meal-entree-bg); color: var(--meal-entree-fg); }

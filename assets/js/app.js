@@ -1,8 +1,15 @@
 (function () {
   "use strict";
 
-  var PROTEIN_LABELS = { beef: "Beef", chicken: "Chicken", turkey: "Turkey", mixed: "Mixed", sweet: "Sweet" };
-  var MEAL_LABELS = { entree: "Entree", breakfast: "Breakfast", snack: "Snack", dessert: "Dessert" };
+  var PROTEIN_LABELS = { beef: "Beef", chicken: "Chicken", turkey: "Turkey", pork: "Pork", mixed: "Mixed", sweet: "Sweet" };
+  var MEAL_LABELS = { entree: "Main", breakfast: "Breakfast", snack: "Snack", dessert: "Dessert" };
+
+  var MACRO_FIELDS = [
+    { key: "calories", label: "Calories", unit: "" },
+    { key: "proteinG", label: "Protein", unit: "g" },
+    { key: "carbsG", label: "Carbs", unit: "g" },
+    { key: "fatG", label: "Fat", unit: "g" },
+  ];
 
   var state = {
     recipes: [],
@@ -10,6 +17,12 @@
     protein: "all",
     meal: "all",
     book: "all",
+    macro: {
+      calories: { min: null, max: null },
+      proteinG: { min: null, max: null },
+      carbsG: { min: null, max: null },
+      fatG: { min: null, max: null },
+    },
   };
 
   function esc(s) {
@@ -60,6 +73,15 @@
       var q = state.query.toLowerCase();
       var hay = (r.title + " " + r.ingredients.join(" ") + " " + r.book).toLowerCase();
       if (hay.indexOf(q) === -1) return false;
+    }
+    for (var i = 0; i < MACRO_FIELDS.length; i++) {
+      var key = MACRO_FIELDS[i].key;
+      var range = state.macro[key];
+      if (range.min === null && range.max === null) continue;
+      var val = r[key];
+      if (val === null || val === undefined) return false;
+      if (range.min !== null && val < range.min) return false;
+      if (range.max !== null && val > range.max) return false;
     }
     return true;
   }
@@ -137,6 +159,36 @@
         renderGrid();
       });
     }
+
+    MACRO_FIELDS.forEach(function (f) {
+      var minEl = document.getElementById("macroMin_" + f.key);
+      var maxEl = document.getElementById("macroMax_" + f.key);
+      if (!minEl || !maxEl) return;
+      minEl.value = state.macro[f.key].min === null ? "" : state.macro[f.key].min;
+      maxEl.value = state.macro[f.key].max === null ? "" : state.macro[f.key].max;
+      minEl.addEventListener("input", function () {
+        state.macro[f.key].min = minEl.value === "" ? null : Number(minEl.value);
+        renderGrid();
+      });
+      maxEl.addEventListener("input", function () {
+        state.macro[f.key].max = maxEl.value === "" ? null : Number(maxEl.value);
+        renderGrid();
+      });
+    });
+
+    var clearMacroBtn = document.getElementById("clearMacroFilters");
+    if (clearMacroBtn) {
+      clearMacroBtn.addEventListener("click", function () {
+        MACRO_FIELDS.forEach(function (f) {
+          state.macro[f.key] = { min: null, max: null };
+          var minEl = document.getElementById("macroMin_" + f.key);
+          var maxEl = document.getElementById("macroMax_" + f.key);
+          if (minEl) minEl.value = "";
+          if (maxEl) maxEl.value = "";
+        });
+        renderGrid();
+      });
+    }
   }
 
   function macroBasis(r) {
@@ -199,7 +251,7 @@
     main.innerHTML =
       '<div class="wrap hero">' +
       "<h1>The Recipe Directory</h1>" +
-      "<p>Every high-protein recipe in one place — filter by protein or meal type, check the macros at a glance, and open any card for full ingredients and directions.</p>" +
+      "<p>Every high-protein recipe in one place — filter by protein or meal type, dial in a macro range (e.g. 50g+ protein, under 20g fat), and open any card for full ingredients and directions.</p>" +
       "</div>" +
       '<div class="wrap controls">' +
       '<div class="search-row"><div class="search-box">' +
@@ -210,6 +262,23 @@
       '<div class="filter-group"><div class="fg-label">Protein</div><div class="chip-row" id="proteinChips"></div></div>' +
       '<div class="filter-group"><div class="fg-label">Meal type</div><div class="chip-row" id="mealChips"></div></div>' +
       '<div class="filter-group"><div class="fg-label">Cookbook</div><div class="chip-row" id="bookChips"></div></div>' +
+      "</div>" +
+      '<div class="macro-filters">' +
+      '<div class="fg-label">Macros (per listed serving) <button type="button" id="clearMacroFilters" class="link-btn">clear</button></div>' +
+      '<div class="macro-filter-row">' +
+      MACRO_FIELDS.map(function (f) {
+        return (
+          '<div class="macro-filter">' +
+          '<span class="macro-filter-label">' + esc(f.label) + (f.unit ? " (" + f.unit + ")" : "") + "</span>" +
+          '<div class="macro-filter-inputs">' +
+          '<input type="number" inputmode="numeric" min="0" placeholder="min" id="macroMin_' + f.key + '">' +
+          "<span>–</span>" +
+          '<input type="number" inputmode="numeric" min="0" placeholder="max" id="macroMax_' + f.key + '">' +
+          "</div>" +
+          "</div>"
+        );
+      }).join("") +
+      "</div>" +
       "</div>" +
       '<div class="result-count" id="resultCount"></div>' +
       "</div>" +
