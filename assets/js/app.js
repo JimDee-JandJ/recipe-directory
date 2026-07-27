@@ -23,12 +23,26 @@
       carbsG: { min: null, max: null },
       fatG: { min: null, max: null },
     },
+    unit: "oz",
   };
 
   function esc(s) {
     if (s === null || s === undefined) return "";
     return String(s).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  var OZ_REGEX = /(\d+(?:\.\d+)?)(?:\s*-\s*(\d+(?:\.\d+)?))?[\s-]*(?:oz|ounces?)\.?(?!\w)/gi;
+
+  function ozToGrams(text) {
+    return text.replace(OZ_REGEX, function (match, n1, n2) {
+      var g1 = Math.round(parseFloat(n1) * 28.3495);
+      if (n2 !== undefined) {
+        var g2 = Math.round(parseFloat(n2) * 28.3495);
+        return g1 + "-" + g2 + "g";
+      }
+      return g1 + "g";
     });
   }
 
@@ -215,8 +229,10 @@
       })
       .join("");
 
-    var ingredientsHtml = r.ingredients.map(function (i) { return "<li>" + esc(i) + "</li>"; }).join("");
-    var stepsHtml = r.instructions.map(function (s) { return "<li>" + esc(s) + "</li>"; }).join("");
+    var convert = state.unit === "g" ? ozToGrams : function (s) { return s; };
+    var ingredientsHtml = r.ingredients.map(function (i) { return "<li>" + esc(convert(i)) + "</li>"; }).join("");
+    var stepsHtml = r.instructions.map(function (s) { return "<li>" + esc(convert(s)) + "</li>"; }).join("");
+    var unitToggleLabel = state.unit === "g" ? "Show oz" : "Show grams";
 
     main.innerHTML =
       '<div class="wrap">' +
@@ -238,11 +254,20 @@
       "</div>" +
       "</div>" +
       '<div class="detail-columns">' +
-      "<div><h2>Ingredients</h2><ul class=\"ingredient-list\">" + ingredientsHtml + "</ul></div>" +
+      '<div><h2>Ingredients <button type="button" id="unitToggle" class="link-btn">' + esc(unitToggleLabel) + "</button></h2>" +
+      '<ul class="ingredient-list">' + ingredientsHtml + "</ul></div>" +
       "<div><h2>Directions</h2><ol class=\"step-list\">" + stepsHtml + "</ol></div>" +
       "</div>" +
       "</div>";
     window.scrollTo(0, 0);
+
+    var unitToggle = document.getElementById("unitToggle");
+    if (unitToggle) {
+      unitToggle.addEventListener("click", function () {
+        state.unit = state.unit === "g" ? "oz" : "g";
+        renderDetail(id);
+      });
+    }
   }
 
   function renderDirectory() {
