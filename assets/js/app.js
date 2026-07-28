@@ -34,9 +34,9 @@
   // Services for the service ID, Email Templates for the template ID. Until
   // real values are set, the "Email me this list" button shows a setup notice
   // instead of sending.
-  var EMAILJS_PUBLIC_KEY = "YOUR_PUBLIC_KEY";
-  var EMAILJS_SERVICE_ID = "YOUR_SERVICE_ID";
-  var EMAILJS_TEMPLATE_ID = "YOUR_TEMPLATE_ID";
+  var EMAILJS_PUBLIC_KEY = "T38B_QcexPS4q8s6C";
+  var EMAILJS_SERVICE_ID = "service_zkk25oh";
+  var EMAILJS_TEMPLATE_ID = "template_m1xxop9";
   var EMAILJS_CONFIGURED = EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY";
 
   var PLAN_HISTORY_KEY = "mealPlanHistory";
@@ -436,8 +436,12 @@
     var emailBtn = document.getElementById("emailPlanBtn");
     if (emailBtn) {
       emailBtn.addEventListener("click", function () {
-        if (!EMAILJS_CONFIGURED || typeof emailjs === "undefined") {
+        if (!EMAILJS_CONFIGURED) {
           showToast("Email isn't set up yet — add EmailJS keys to app.js first.");
+          return;
+        }
+        if (typeof emailjs === "undefined") {
+          showToast("Couldn't reach the email service — check your connection and try again.");
           return;
         }
         emailBtn.disabled = true;
