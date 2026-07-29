@@ -24,7 +24,23 @@
       fatG: { min: null, max: null },
     },
     unit: "oz",
+    plannerCount: 3,
+    currentPlan: null,
+    planWarning: null,
   };
+
+  // Fill these in from your EmailJS account (emailjs.com) to enable automatic
+  // sending from the meal planner: Account > General for the public key, Email
+  // Services for the service ID, Email Templates for the template ID. Until
+  // real values are set, the "Email me this list" button shows a setup notice
+  // instead of sending.
+  var EMAILJS_PUBLIC_KEY = "T38B_QcexPS4q8s6C";
+  var EMAILJS_SERVICE_ID = "service_zkk25oh";
+  var EMAILJS_TEMPLATE_ID = "template_m1xxop9";
+  var EMAILJS_CONFIGURED = EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY";
+
+  var PLAN_HISTORY_KEY = "mealPlanHistory";
+  var PLAN_HISTORY_CAP = 24;
 
   function esc(s) {
     if (s === null || s === undefined) return "";
@@ -103,9 +119,9 @@
   function renderGrid() {
     var grid = document.getElementById("grid");
     var countEl = document.getElementById("resultCount");
-    if (!grid) return;
     var filtered = state.recipes.filter(matches);
-    countEl.textContent = filtered.length + (filtered.length === 1 ? " recipe" : " recipes");
+    if (countEl) countEl.textContent = filtered.length + (filtered.length === 1 ? " recipe" : " recipes");
+    if (!grid) return;
     if (filtered.length === 0) {
       grid.innerHTML = "";
       grid.insertAdjacentHTML(
@@ -270,14 +286,8 @@
     }
   }
 
-  function renderDirectory() {
-    document.title = "Recipe Directory";
-    var main = document.getElementById("app");
-    main.innerHTML =
-      '<div class="wrap hero">' +
-      "<h1>The Recipe Directory</h1>" +
-      "<p>Every high-protein recipe in one place — filter by protein or meal type, dial in a macro range (e.g. 50g+ protein, under 20g fat), and open any card for full ingredients and directions.</p>" +
-      "</div>" +
+  function controlsHtml() {
+    return (
       '<div class="wrap controls">' +
       '<div class="search-row"><div class="search-box">' +
       '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>' +
@@ -306,14 +316,203 @@
       "</div>" +
       "</div>" +
       '<div class="result-count" id="resultCount"></div>' +
+      "</div>"
+    );
+  }
+
+  function renderDirectory() {
+    document.title = "Recipe Directory";
+    var main = document.getElementById("app");
+    main.innerHTML =
+      '<div class="wrap hero">' +
+      "<h1>The Recipe Directory</h1>" +
+      "<p>Every high-protein recipe in one place — filter by protein or meal type, dial in a macro range (e.g. 50g+ protein, under 20g fat), and open any card for full ingredients and directions.</p>" +
       "</div>" +
+      controlsHtml() +
       '<div class="wrap"><div class="grid" id="grid"></div></div>';
     initFilters();
     renderGrid();
   }
 
+  function showToast(message) {
+    var toast = document.getElementById("toast");
+    if (!toast) return;
+    toast.textContent = message;
+    toast.classList.add("show");
+    clearTimeout(toast._hideTimer);
+    toast._hideTimer = setTimeout(function () { toast.classList.remove("show"); }, 3500);
+  }
+
+  function getPlanHistory() {
+    try {
+      var raw = localStorage.getItem(PLAN_HISTORY_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function recordPlanHistory(ids) {
+    try {
+      var history = getPlanHistory().concat(ids);
+      if (history.length > PLAN_HISTORY_CAP) {
+        history = history.slice(history.length - PLAN_HISTORY_CAP);
+      }
+      localStorage.setItem(PLAN_HISTORY_KEY, JSON.stringify(history));
+    } catch (e) {
+      // localStorage unavailable — repeat-avoidance just won't persist
+    }
+  }
+
+  function shuffle(arr) {
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+    return arr;
+  }
+
+  function pickMealPlan(count) {
+    var pool = state.recipes.filter(matches);
+    if (pool.length === 0) {
+      return { picks: [], warning: "No recipes match your current filters — loosen them and try again." };
+    }
+    var historySet = {};
+    getPlanHistory().forEach(function (id) { historySet[id] = true; });
+    var fresh = shuffle(pool.filter(function (r) { return !historySet[r.id]; }));
+    var picks = fresh.slice(0, count);
+    var warning = null;
+    if (picks.length < count) {
+      var need = count - picks.length;
+      var usedIds = {};
+      picks.forEach(function (r) { usedIds[r.id] = true; });
+      var refill = shuffle(pool.filter(function (r) { return !usedIds[r.id]; }));
+      var added = refill.slice(0, need);
+      picks = picks.concat(added);
+      if (picks.length < count) {
+        warning = "Only " + picks.length + " recipe" + (picks.length === 1 ? "" : "s") + " match your current filters, so that's all this plan could include.";
+      } else if (added.length > 0) {
+        warning = "Ran out of recipes you haven't had recently under these filters, so " + added.length + " repeat" + (added.length === 1 ? "" : "s") + " from recent weeks got included.";
+      }
+    }
+    return { picks: picks, warning: warning };
+  }
+
+  function shoppingListHtml(picks) {
+    return picks.map(function (r) {
+      var items = r.ingredients.map(function (i) { return "<li>" + esc(i) + "</li>"; }).join("");
+      return '<div class="shopping-group"><h3>' + esc(r.title) + '</h3><ul>' + items + "</ul></div>";
+    }).join("");
+  }
+
+  function planEmailBody(picks) {
+    var lines = ["Your meal plan for this week:", ""];
+    picks.forEach(function (r) {
+      lines.push(r.title.toUpperCase());
+      r.ingredients.forEach(function (i) { lines.push("- " + i); });
+      lines.push("");
+    });
+    return lines.join("\n");
+  }
+
+  function renderPlanResults() {
+    var container = document.getElementById("planResults");
+    if (!container) return;
+    if (!state.currentPlan || state.currentPlan.length === 0) {
+      container.innerHTML = "";
+      return;
+    }
+    var picks = state.currentPlan;
+    container.innerHTML =
+      (state.planWarning ? '<div class="planner-warning">' + esc(state.planWarning) + "</div>" : "") +
+      '<div class="plan-grid">' + picks.map(cardTemplate).join("") + "</div>" +
+      "<h2>Shopping list</h2>" +
+      '<div class="shopping-list">' + shoppingListHtml(picks) + "</div>" +
+      '<div class="plan-actions">' +
+      '<button type="button" class="btn" id="emailPlanBtn">Email me this list</button>' +
+      '<button type="button" class="btn btn-ghost" id="regenPlanBtn">Regenerate</button>' +
+      "</div>";
+
+    var emailBtn = document.getElementById("emailPlanBtn");
+    if (emailBtn) {
+      emailBtn.addEventListener("click", function () {
+        if (!EMAILJS_CONFIGURED) {
+          showToast("Email isn't set up yet — add EmailJS keys to app.js first.");
+          return;
+        }
+        if (typeof emailjs === "undefined") {
+          showToast("Couldn't reach the email service — check your connection and try again.");
+          return;
+        }
+        emailBtn.disabled = true;
+        emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+          plan_title: "Meal plan: " + picks.map(function (r) { return r.title; }).join(", "),
+          message: planEmailBody(picks),
+        }).then(function () {
+          showToast("Sent! Check your inbox.");
+          emailBtn.disabled = false;
+        }, function (err) {
+          showToast("Couldn't send that email — try again in a moment.");
+          emailBtn.disabled = false;
+        });
+      });
+    }
+
+    var regenBtn = document.getElementById("regenPlanBtn");
+    if (regenBtn) {
+      regenBtn.addEventListener("click", function () {
+        generatePlan();
+      });
+    }
+  }
+
+  function generatePlan() {
+    var result = pickMealPlan(state.plannerCount);
+    state.currentPlan = result.picks;
+    state.planWarning = result.warning;
+    if (result.picks.length > 0) {
+      recordPlanHistory(result.picks.map(function (r) { return r.id; }));
+    }
+    renderPlanResults();
+  }
+
+  function renderPlanner() {
+    document.title = "Meal Planner · Recipe Directory";
+    var main = document.getElementById("app");
+    main.innerHTML =
+      '<div class="wrap hero">' +
+      "<h1>Meal Planner</h1>" +
+      "<p>Set whatever protein, meal type, cookbook, or macro filters matter to you below, then generate a random plan. It avoids repeating recent picks (stored on this device) and lets you email the combined shopping list straight to yourself.</p>" +
+      "</div>" +
+      controlsHtml() +
+      '<div class="wrap">' +
+      '<div class="planner-options">' +
+      '<div class="filter-group"><div class="fg-label">Meals this week</div><div class="chip-row" id="plannerCountChips"></div></div>' +
+      '<button type="button" class="btn" id="generatePlanBtn">Generate meal plan</button>' +
+      "</div>" +
+      '<div id="planResults"></div>' +
+      "</div>";
+    initFilters();
+    renderGrid();
+
+    buildChipGroup(
+      "plannerCountChips",
+      [{ value: "2", label: "2 meals" }, { value: "3", label: "3 meals" }],
+      String(state.plannerCount),
+      function (v) { state.plannerCount = Number(v); }
+    );
+
+    document.getElementById("generatePlanBtn").addEventListener("click", generatePlan);
+
+    if (state.currentPlan) renderPlanResults();
+  }
+
   function route() {
     var hash = window.location.hash || "#/";
+    if (hash === "#/planner") {
+      renderPlanner();
+      return;
+    }
     var m = hash.match(/^#\/recipe\/(.+)$/);
     if (m) {
       renderDetail(decodeURIComponent(m[1]));
@@ -323,6 +522,9 @@
   }
 
   function boot() {
+    if (EMAILJS_CONFIGURED && typeof emailjs !== "undefined") {
+      emailjs.init(EMAILJS_PUBLIC_KEY);
+    }
     fetch("assets/data/recipes.json")
       .then(function (r) { return r.json(); })
       .then(function (data) {
