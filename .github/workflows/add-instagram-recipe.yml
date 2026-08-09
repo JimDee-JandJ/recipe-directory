@@ -1,0 +1,35 @@
+name: Add Instagram recipe
+
+on:
+  repository_dispatch:
+    types: [add-instagram-recipe]
+
+permissions:
+  contents: write
+
+jobs:
+  add-recipe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Parse caption and add recipe
+        id: add
+        env:
+          INSTAGRAM_URL: ${{ github.event.client_payload.url }}
+          CAPTION: ${{ github.event.client_payload.caption }}
+          IMAGE_URL: ${{ github.event.client_payload.image_url }}
+        run: node scripts/add-instagram-recipe.js
+
+      - name: Commit and push
+        if: steps.add.outputs.added == 'true'
+        run: |
+          git config user.name "recipe-bot"
+          git config user.email "actions@github.com"
+          git add assets/data/recipes.json assets/img
+          git commit -m "Add Instagram recipe: ${{ steps.add.outputs.title }}"
+          git push

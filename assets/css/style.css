@@ -239,6 +239,8 @@ img { max-width: 100%; display: block; }
 .detail-tags .tag { position: static; font-size: 0.72rem; padding: 5px 11px; }
 .detail-meta-row { display: flex; gap: 22px; flex-wrap: wrap; color: var(--ink-soft); font-size: 0.9rem; }
 .detail-meta-row span { display: inline-flex; gap: 6px; align-items: center; }
+.detail-meta-row a { color: var(--accent); text-decoration: none; font-weight: 600; }
+.detail-meta-row a:hover { text-decoration: underline; }
 
 .macro-table {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
