@@ -1,0 +1,32 @@
+name: Backfill recipe images
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Fetch stock photos for recipes missing images
+        id: backfill
+        env:
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+        run: node scripts/backfill-images.js
+
+      - name: Commit and push
+        if: steps.backfill.outputs.updated == 'true'
+        run: |
+          git config user.name "recipe-bot"
+          git config user.email "actions@github.com"
+          git add assets/data/recipes.json assets/img
+          git commit -m "Backfill ${{ steps.backfill.outputs.count }} recipe images from Pexels"
+          git push
