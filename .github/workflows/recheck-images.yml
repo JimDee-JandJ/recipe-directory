@@ -1,0 +1,32 @@
+name: Recheck backfilled images
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  recheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Re-validate the original 179 backfilled images
+        id: recheck
+        env:
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+        run: node scripts/recheck-images.js
+
+      - name: Commit and push
+        if: steps.recheck.outputs.changed == 'true'
+        run: |
+          git config user.name "recipe-bot"
+          git config user.email "actions@github.com"
+          git add assets/data/recipes.json assets/img scripts/recheck-progress.json
+          git commit -m "Recheck backfilled images: ${{ steps.recheck.outputs.replaced }} replaced, ${{ steps.recheck.outputs.reverted }} reverted to placeholder"
+          git push

@@ -1,6 +1,12 @@
 #!/usr/bin/env node
 "use strict";
 
+// One-time pass to re-validate the 179 images picked by the first backfill-images.js run,
+// before it had the relevance check added. Any recipe id in recheck-ids.json whose current
+// photo doesn't hold up against the (now stricter) matching logic gets replaced, or reverted
+// to the placeholder if no relevant photo can be found at all. Safe to re-run repeatedly:
+// progress is tracked in recheck-progress.json so each run only processes what's left.
+
 const fs = require("fs");
 const path = require("path");
 const https = require("https");
@@ -8,9 +14,11 @@ const { extractKeywords, findDishType, isRelevant } = require("./lib/dish-matche
 
 const RECIPES_PATH = path.join(__dirname, "..", "assets", "data", "recipes.json");
 const IMG_DIR = path.join(__dirname, "..", "assets", "img");
+const SEED_IDS_PATH = path.join(__dirname, "recheck-ids.json");
+const PROGRESS_PATH = path.join(__dirname, "recheck-progress.json");
 
 const API_KEY = process.env.PEXELS_API_KEY;
-const BATCH_CAP = 150; // ceiling on recipes attempted per run; the rate-limit check below is the real stop condition
+const BATCH_CAP = 150;
 
 function setOutput(name, value) {
   fs.appendFileSync(process.env.GITHUB_OUTPUT, name + "=" + value + "\n");
@@ -51,9 +59,6 @@ function photoUrlOf(photo) {
   return photo.src.large || photo.src.medium || photo.src.original;
 }
 
-// Tries the full title first; if none of the results' descriptions actually mention the
-// recipe's key terms (e.g. a "BBQ platter" photo for "Honey BBQ Chicken Mac & Cheese"),
-// retries with just the base dish type ("mac and cheese") pulled from DISH_KEYWORDS.
 async function findBestPhoto(title) {
   const keywords = extractKeywords(title);
   const dishType = findDishType(title);
@@ -67,12 +72,13 @@ async function findBestPhoto(title) {
   if (dishType) {
     const fallback = await searchPhotos(dishType + " food");
     lastRemaining = Number.isNaN(fallback.remaining) ? lastRemaining : fallback.remaining;
-    relevant = fallback.photos.find((p) => isRelevant(p, title, dishType, keywords)) || fallback.photos[0];
+    relevant = fallback.photos.find((p) => isRelevant(p, title, dishType, keywords));
     if (relevant) return { photoUrl: photoUrlOf(relevant), remaining: lastRemaining };
   }
 
-  const best = primary.photos[0];
-  return { photoUrl: best ? photoUrlOf(best) : null, remaining: lastRemaining };
+  // Unlike the main backfill script, no last-resort fallback to an unverified top result here —
+  // this pass exists specifically to remove unverified matches, not add new ones.
+  return { photoUrl: null, remaining: lastRemaining };
 }
 
 function downloadImage(imgUrl, destPath) {
@@ -98,15 +104,28 @@ async function main() {
     process.exit(1);
   }
 
+  const seedIds = JSON.parse(fs.readFileSync(SEED_IDS_PATH, "utf8"));
+  const progress = fs.existsSync(PROGRESS_PATH) ? JSON.parse(fs.readFileSync(PROGRESS_PATH, "utf8")) : [];
+  const progressSet = new Set(progress);
+  const remainingIds = seedIds.filter((id) => !progressSet.has(id)).slice(0, BATCH_CAP);
+
+  console.log("Rechecking " + remainingIds.length + " of " + (seedIds.length - progress.length) + " remaining recipes.");
+
   const recipes = JSON.parse(fs.readFileSync(RECIPES_PATH, "utf8"));
-  const missing = recipes.filter((r) => r.image === "placeholder.jpg").slice(0, BATCH_CAP);
+  const byId = new Map(recipes.map((r) => [r.id, r]));
 
-  console.log("Found " + missing.length + " recipes to backfill this run (of the full remaining set).");
+  let replaced = 0;
+  let reverted = 0;
+  let kept = 0;
+  let processedIds = [];
 
-  let updated = 0;
-  let skipped = 0;
+  for (const id of remainingIds) {
+    const recipe = byId.get(id);
+    if (!recipe) {
+      processedIds.push(id); // no longer exists in recipes.json — nothing to do
+      continue;
+    }
 
-  for (const recipe of missing) {
     let result;
     try {
       result = await findBestPhoto(recipe.title);
@@ -115,25 +134,30 @@ async function main() {
         console.log("Hit Pexels rate limit — stopping early. Re-run the workflow later for the rest.");
         break;
       }
-      skipped++;
+      processedIds.push(id);
       continue;
     }
 
     if (!result.photoUrl) {
-      console.log("No photo found for: " + recipe.title);
-      skipped++;
+      recipe.image = "placeholder.jpg";
+      const oldFile = path.join(IMG_DIR, id + ".jpg");
+      if (fs.existsSync(oldFile)) fs.unlinkSync(oldFile);
+      reverted++;
+      console.log("Reverted to placeholder (no relevant match found): " + recipe.title);
     } else {
-      const destName = recipe.id + ".jpg";
+      const destName = id + ".jpg";
       const ok = await downloadImage(result.photoUrl, path.join(IMG_DIR, destName));
       if (ok) {
         recipe.image = destName;
-        updated++;
-        console.log("Updated: " + recipe.title);
+        replaced++;
+        console.log("Replaced with a verified match: " + recipe.title);
       } else {
-        console.log("Download failed for: " + recipe.title);
-        skipped++;
+        kept++;
+        console.log("Download failed, keeping existing image: " + recipe.title);
       }
     }
+
+    processedIds.push(id);
 
     if (!Number.isNaN(result.remaining) && result.remaining <= 5) {
       console.log("Approaching Pexels rate limit (remaining=" + result.remaining + ") — stopping early.");
@@ -143,13 +167,22 @@ async function main() {
     await sleep(350);
   }
 
-  if (updated > 0) {
+  const changed = replaced + reverted;
+  if (changed > 0) {
     fs.writeFileSync(RECIPES_PATH, JSON.stringify(recipes, null, 1) + "\n");
   }
 
-  console.log("Done. Updated: " + updated + ", skipped: " + skipped + ".");
-  setOutput("updated", updated > 0 ? "true" : "false");
-  setOutput("count", String(updated));
+  const newProgress = progress.concat(processedIds);
+  fs.writeFileSync(PROGRESS_PATH, JSON.stringify(newProgress, null, 1) + "\n");
+
+  const done = newProgress.length >= seedIds.length;
+  console.log(
+    "Done. Replaced: " + replaced + ", reverted: " + reverted + ", kept: " + kept +
+      ". Progress: " + newProgress.length + "/" + seedIds.length + (done ? " (complete)" : "")
+  );
+  setOutput("changed", changed > 0 || processedIds.length > 0 ? "true" : "false");
+  setOutput("replaced", String(replaced));
+  setOutput("reverted", String(reverted));
 }
 
 main();
