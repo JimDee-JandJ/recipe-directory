@@ -263,6 +263,7 @@
       (r.yieldText ? "<span>🍽️ " + esc(r.yieldText) + "</span>" : "") +
       (r.prep ? "<span>🔪 Prep: " + esc(r.prep) + "</span>" : "") +
       (r.cook ? "<span>⏱ Cook: " + esc(r.cook) + "</span>" : "") +
+      (r.source ? '<span>🔗 <a href="' + esc(r.source) + '" target="_blank" rel="noopener">View original post</a></span>' : "") +
       "</div>" +
       '<div class="macro-table">' + macroCells + "</div>" +
       '<div class="macro-basis">' + esc(macroBasis(r)) + "</div>" +
